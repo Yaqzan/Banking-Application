@@ -4,8 +4,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <limits>
+#include <algorithm>
 using namespace std;
-
 
 class client
 {
@@ -38,10 +39,15 @@ client::client()
 	name2 = " ";
 }
 
-
+//Manager Menus and Functions
 void managerMenu(vector<client>& clients);					 // Brings user to the manager screen
-void maintenanceMenu(void);									 // BRings user to the maintenance screen
+bool openAccount(vector<client>& clients, int accID, string firstName, string lastName);
+bool deleteAccount(vector<client>& clients, int accID);
 void printManMenu(void);
+
+//Maintenance Menus and Functions
+void maintenanceMenu(void);									 // BRings user to the maintenance screen
+
 //Client Menues
 void clientMenu(client& theClient, vector<client>& clients); //Brings user to the screen for clients
 void printClientMenu(client& theClient, bool cheq, bool sav);// Prints the options available to the client
@@ -55,6 +61,12 @@ void savings(client& theClient, bool sav, bool cheq);
 int getNumber();
 double getDouble();
 void saveClients(vector<client>& clients);					 // Writes client data to text file/ saves the changes
+int getAccountIndex(vector<client>& clients, int targetAccNum, int low, int high);
+bool compareAccountLastName(client a, client b);
+bool compareAccountNums(client a, client b);
+bool existsInDatabase(vector<client>& clients, int targetAccID);
+void sortByAccountNumber(vector<client>& clients);
+vector<client> sortByLastName(vector<client> clients);
 
 int main()
 {
@@ -105,15 +117,10 @@ int main()
 				maintenanceMenu();
 				found = true;
 			}
-			else{
-
-				for (int i = 0; i < clients.size(); i++){
-					if (getId == clients[i].getId()){
-						clientMenu(clients[i], clients);
-						found = true;
-						break;
-					}
-				}
+			else if (existsInDatabase(clients, getId)){
+                                int x = getAccountIndex(clients, getId, 0, clients.size() - 1);
+                                clientMenu(clients[x], clients);
+				found = true;
 			}
 			if (!found)
 				cout<<endl << "Sorry, that ID is not in our servers\n";
@@ -345,7 +352,9 @@ void withdraw(client& theClient){
 	}
 }
 void saveClients(vector<client>& clients){
-	ofstream outputFile("clients.txt");
+    // Sort the clients vector by account number.
+    sortByAccountNumber(clients);
+    ofstream outputFile("clients.txt");
 	for (int i = 0; i < clients.size(); i++){
 		outputFile << clients[i].getId() << " " << clients[i].getChequing() << " " << clients[i].getSavings() << " " << clients[i].getFirstName() << " " << clients[i].getLastName()<<"\n";
 	}
@@ -368,7 +377,7 @@ void printClientMenu(client& theClient, bool cheq, bool sav){
 
 }
 void printManMenu(){
-	cout << endl<< "***********---What woudld you like to do?---***********\n";
+	cout << endl<< "***********---What would you like to do?---***********\n";
 	cout << "***********---1: Create an account---***********\n";
 	cout << "***********---2: Delete an account---***********\n";
 	cout << "***********---3: Display an account---***********\n";
@@ -376,28 +385,310 @@ void printManMenu(){
 	cout << "***********---5: Logout---***********\n";
 }
 void managerMenu(vector<client>& clients){
-	cout <<endl << "Welcome Manager!\n";
+        cout <<endl << "Welcome Manager!\n";
+        start:
 	bool logout = false;
-	int x;
-	while (true){
+	while (!logout){
 		printManMenu();
 		switch (getNumber()){
+                // Create an account.   
 		case 1:
-			break;
+                {
+                    bool valid1 = false;
+                    // Get the account number.
+                    int newAccNumber;
+                    while (!valid1){
+                        cout << "Please enter an account number. \n";
+                        cout << "To cancel, enter 0.\n";
+                        newAccNumber = getNumber();
+                        if (newAccNumber == 0) goto start;   //Escape back to the manager menu.
+                        else if (newAccNumber > 1) valid1 = true;
+                        else cout << "Negative numbers and 1 are not valid account numbers.\n";
+                    }
+                    
+                    // Get the first name of the new client.
+                    valid1 = false;
+                    string firstName;
+                    while (!valid1){
+                        cout << "Please enter the first name of the new client.\n";
+                        cout << "To cancel, enter 0.\n";
+                        cin >> firstName;
+                        if (firstName.compare("0") == 0){ // If the first name is "0" then...
+                            // Escape back to the manager menu.
+                            cout << "Hey guy";
+                            goto start;
+                        }
+                        else if (firstName.size() >= 1){
+                            valid1 = true;
+                        }
+                        else {
+                            cout << "Please enter a valid name.\n";
+                        }
+                    }
+                    
+                    // Get the last name of the new client.
+                    valid1 = false;
+                    string lastName;
+                    while (!valid1){
+                        cout << "Please enter the last name of the new client.\n";
+                        cout << "To cancel, enter 0.\n";
+                        cin >> lastName;
+                        if (lastName.compare("0") == 0){ // If the last name is "0" then...
+                            // Escape back to the manager menu.
+                            goto start;
+                        }
+                        else if (lastName.size() >= 1){
+                            valid1 = true;
+                        }
+                        else {
+                            cout << "Please enter a valid name.\n";
+                        }
+                    }
+                    
+                    // Attempt to open the account.
+                    bool success = openAccount(clients, newAccNumber, firstName, lastName);
+                    if (!success){
+                        cout << "Could not open account: account number already exists.\n";
+                    }
+                    else {
+                        cout << "Account successfully created.\n";
+                    }
+                    break;
+                }
+                
+                    
+                // Delete an account.   
 		case 2:
-			break;
+                {
+                    bool valid2 = false;
+                    // Get the account number.
+                    while (!valid2){
+                        cout << "Please enter an account number to delete.\n";
+                        cout << "To cancel, enter 0.\n";
+                        int accNumber = getNumber();
+                        if (accNumber == 0) goto start;   //Escape back to the manager menu.
+                        bool success = deleteAccount(clients, accNumber);
+                        if (!success){
+                            cout << "Account " << accNumber << " could not be found.\n";
+                        }
+                        else{
+                            cout << "Account " << accNumber << " successfully removed.\n";
+                            valid2 = true;
+                        }
+                    }
+                    break;
+                }
+                
+                    
+                // Display an account.    
 		case 3:
-			break;
+                {
+                    bool valid3 = false;
+                    while (!valid3){
+                        if (clients.size() == 0){
+                            cout << "No accounts to display.\n";
+                            goto start;
+                        }
+                        cout << "Please enter an account to view.\n";
+                        cout << "To cancel, enter 0.\n";
+                        int accNumber = getNumber();
+                        if (accNumber == 0) goto start;
+                        // Check if the account is in the database.
+                        if (existsInDatabase(clients, accNumber)){
+                            // Find the location at which the account is stored in the vector
+                            int i = getAccountIndex(clients, accNumber, 0, clients.size() - 1);
+                            // Display the data.
+                            cout << "********************************************" << endl;
+                            cout << "Account Number:      " << clients[i].getId() << endl;
+                            cout << "Name:                " << clients[i].getLastName() << ", " << clients[i].getFirstName() << endl;
+                            cout << "Savings Account:     $" << clients[i].getSavings() << endl;
+                            cout << "Chequing Account:    $" << clients[i].getChequing() << endl;
+                            cout << "********************************************" << endl;
+                            valid3 = true;
+                        }
+                        else {
+                            cout << "Account " << accNumber << " could not be found.\n";
+                        }
+                    }
+                    break;
+                }
+                
+                // Display all accounts.    
 		case 4:
-			break;
+                {
+                    if (clients.size() == 0){
+                        cout << "No accounts to display.\n";
+                    }
+                    else{
+                        // Ask which order to display accounts in.
+                        cout << "***********---Sort by:---***********\n";
+                        cout << "***********---1: Account Number---***********\n";
+                        cout << "***********---2: Last Name---***********\n";
+                        cout << "***********---0: Cancel---***********\n";
+                        switch(getNumber())
+                        {
+                            case 1:
+                            {
+                                // Display all accounts by account number.
+                                for (int i = 0; i < clients.size(); i++){
+                                    // Display the data.
+                                    cout << "********************************************" << endl;
+                                    cout << "Account Number:       " << clients[i].getId() << endl;
+                                    cout << "Name:                 " << clients[i].getLastName() << ", " << clients[i].getFirstName() << endl;
+                                    cout << "Savings Account:      $" << clients[i].getSavings() << endl;
+                                    cout << "Chequing Account:     $" << clients[i].getChequing() << endl;
+                                }
+                                cout << "********************************************" << endl;
+                                break;
+                            }
+                            case 2:
+                            {
+                                // Display all accounts by last name.
+                                vector<client> alphaClients = sortByLastName(clients);
+                                for (int i = 0; i < alphaClients.size(); i++){
+                                    // Display the data.
+                                    cout << "********************************************" << endl;
+                                    cout << "Account Number:       " << alphaClients[i].getId() << endl;
+                                    cout << "Name:                 " << alphaClients[i].getLastName() << ", " << alphaClients[i].getFirstName() << endl;
+                                    cout << "Savings Account:      $" << alphaClients[i].getSavings() << endl;
+                                    cout << "Chequing Account:     $" << alphaClients[i].getChequing() << endl;
+                                }
+                                cout << "********************************************" << endl;
+                                break;
+                            }
+                            case 0:
+                            {
+                                goto start;
+                            }
+                            default:
+                            {
+                                cout << "Error: Invalid input\n";
+                            }
+                        }
+                        
+                    }
+                    break;
+                }
+                    
+                // Log out.        
 		case 5:
-			return;
+                {
+                    return;
+                }
 		default:
 			cout << "Error: Invalid input\n";
 
 		}
 	}
 }
+bool openAccount(vector<client>& clients, int accID, string firstName, string lastName)
+{
+    // Check if the account ID already exists in the database.
+    if (existsInDatabase(clients, accID)){
+        return false;
+    }
+    else {
+        // Create a new client object.
+        client newClient = client();
+        newClient.setFirstName(firstName);
+        newClient.setLastName(lastName);
+        newClient.setId(accID);
+        // Add to the vector.
+        clients.push_back(newClient);
+        // Add to the database.
+        saveClients(clients);
+        return true;
+    }
+    
+
+    
+}
+
+bool deleteAccount(vector<client>& clients, int accID)
+{
+    // Check if the vector is empty.
+    if (clients.empty()){
+        return false;
+    }
+    // Check if the account ID exists in the database.
+    else if (existsInDatabase(clients, accID)){
+        // Perform a binary search method to get the index value of the account.
+        int i = getAccountIndex(clients, accID, 0, clients.size() - 1);
+        // Remove the account from the vector.
+        clients.erase(clients.begin() + i);
+        // Update the database.
+        saveClients(clients);
+        return true;
+    }
+    else {
+        return false;
+    }
+    
+}
+
+void sortByAccountNumber(vector<client>& clients)
+{
+    if (clients.empty()){
+        return;
+    }
+    // Sort by account number.
+    std::sort(clients.begin(), clients.end(), compareAccountNums);
+    
+}
+
+vector<client> sortByLastName(vector<client> clients)
+{
+    if (clients.empty()){
+        return clients;
+    }
+    // Sort the vector, but do not save the changes.
+    sort(clients.begin(), clients.end(), compareAccountLastName);
+    return clients;
+    
+}
+
+bool existsInDatabase(vector<client>& clients, int targetAccID)
+{
+    if (clients.empty()){
+        return false;
+    }
+    // First ensure that the vector is ordered (by account number).
+    sortByAccountNumber(clients);
+    // Search using the binary search method.
+    int result = getAccountIndex(clients, targetAccID, 0, clients.size() - 1);
+    if (result == -1){
+        return false;
+    }
+    else {
+        return true;
+    }
+    
+}
+
+bool compareAccountNums(client a, client b){
+    return (a.getId() < b.getId());
+}
+
+bool compareAccountLastName(client a, client b){
+    return (a.getLastName() < b.getLastName());
+}
+
+int getAccountIndex(vector<client>& clients, int targetAccNum, int low, int high){
+    // Perform a binary search for the account.
+    // This assumes we have an ordered list.
+    if (high < low) return -1; // Not found.
+    int mid = low + ((high - low) / 2);
+    if (clients[mid].getId() > targetAccNum){
+        return getAccountIndex(clients, targetAccNum, low, mid - 1);
+    }
+    else if (clients[mid].getId() < targetAccNum){
+        return getAccountIndex(clients, targetAccNum, mid + 1, high);
+    }
+    else{
+        return mid; // Found.
+    }
+}
+
 void maintenanceMenu(void){
 	cout <<endl << "Welcome System Maintenance Person!\n";
 }
