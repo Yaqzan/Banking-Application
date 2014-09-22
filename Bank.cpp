@@ -6,6 +6,8 @@
 #include <sstream>
 #include <limits>
 #include <algorithm>
+#define ON true
+#define OFF false
 using namespace std;
 
 class client
@@ -46,7 +48,11 @@ bool deleteAccount(vector<client>& clients, int accID);
 void printManMenu(void);
 
 //Maintenance Menus and Functions
-void maintenanceMenu(void);									 // BRings user to the maintenance screen
+void maintenanceMenu(void);		 // Brings user to the maintenance screen
+void toggleExecutionTraces(void);   // Sets execution traces from on --> off or from off --> on.
+void setExecutionTraces(bool x);   // Turns execution traces on or off depending on x. (true = on, false = off)
+void writeToET(string str);  // Writes str to the file execution_traces.txt 
+void printExecutionTraces(void);
 
 //Client Menus and Functions
 void clientMenu(client& theClient, vector<client>& clients); //Brings user to the screen for clients
@@ -73,9 +79,37 @@ void sortByAccountNumber(vector<client>& clients);
 vector<client> sortByLastName(vector<client> clients);
 bool penalty(client& theClient, double amount);
 
+// Global Variables
+bool executionTraces; // This is defined main().
+
 int main()
 {
-	// initialize everything
+        // Initialize executionTraces.
+        // Read from the file execution_traces.txt and check the first line.  The first line saves the state of whether the ET is on/off.
+        // 1 = ON, 0 = OFF
+        ifstream etFile("execution_traces.txt");
+        if (etFile.is_open()){
+            // Read the file's first line.
+            string etStr;
+            getline(etFile, etStr);
+            if (etStr.compare("1") == 0){  // If 1, then on
+                executionTraces = ON;
+            }
+            else if (etStr.compare("0") == 0){  // If 0, then off
+                executionTraces = OFF;
+            }
+            else{  // If neither, then off and error message
+                executionTraces = OFF;
+                cout << "Error: Could not read current state of execution traces. Execution traces are OFF by default.\n";
+            }
+
+        }
+        else{
+            cout << "Could not open execution_traces.txt. Execution traces are OFF by default.\n";
+            executionTraces = OFF;
+        }
+
+	// initialize everything else
 	const int managerId = 0;
 	const int maintenId = 1;
 	vector<client> clients;		// THe client vector array
@@ -891,6 +925,37 @@ int getAccountIndex(vector<client>& clients, int targetAccNum, int low, int high
 
 void maintenanceMenu(void){
 	cout <<endl << "Welcome System Maintenance Person!\n";
+        
+        bool logout = false;
+        while (!logout){
+            cout << endl << "***********---What would you like to do?---*********** \n";
+            cout << "***********---1: Toggle execution tracing---***********\n";
+            cout << "***********---2: Print execution traces---***********\n";
+            cout << "***********---3: Logout---***********\n";
+            switch (getNumber()){
+                
+                // Toggle execution tracing.
+                case 1:{
+                    toggleExecutionTraces();
+                    break;
+                }
+                
+                // Print execution traces.
+                case 2:{
+                    printExecutionTraces();
+                    break;
+                }
+                
+                // Logout.
+                case 3:{
+                    return; // Exit the maintenance menu.
+                }
+                
+                default:{
+                    cout << "Invalid input\n";
+                }   
+            }
+        }
 }
 int getNumber(){
 	int ammount;
@@ -923,4 +988,65 @@ bool penalty(client& theClient, double amount){
     else{
         return false;
     }
+}
+
+
+void toggleExecutionTraces(){
+    if (executionTraces == ON){
+        cout << "Execution tracing is ON. Do you want to switch if OFF?\n";
+        cout << "1: Yes\n";
+        cout << "2: No\n";
+        switch (getNumber()){
+            
+            case 1:{    //Yes, switch OFF
+                executionTraces = OFF;
+                cout << "Execution tracing is OFF.\n";
+                break;
+            }
+            
+            case 2:{    //No, keep ON
+                cout << "Execution tracing is ON.\n";
+                break;
+            }
+            default:{
+                cout << "Invalid input\n";
+            }
+        }
+    }
+    else{
+        cout << "Execution tracing is OFF. Do you want to switch it ON?\n";
+        cout << "1: Yes\n";
+        cout << "2: No\n";
+        switch (getNumber()){
+            
+            case 1:{    //Yes, switch ON
+                executionTraces = ON;
+                cout << "Execution tracing is ON.\n";
+                break;
+            }
+            
+            case 2:{    //No, keep OFF
+                cout << "Execution tracing is OFF.\n";
+                break;
+            }
+            default:{
+                cout << "Invalid input\n";
+            }
+        }
+    }
+}
+
+void writeToET(string str){
+    ofstream etFile;
+    // Open the file in append mode.
+    etFile.open("execution_traces.txt", ios::app);
+    // Write.
+    etFile << str;
+    // Close.
+    etFile.close();
+}
+
+void printExecutionTraces(){
+    // Open execution_traces.txt and print the file (excluding the first line).
+    
 }
