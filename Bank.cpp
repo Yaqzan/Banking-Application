@@ -48,12 +48,16 @@ void printManMenu(void);
 //Maintenance Menus and Functions
 void maintenanceMenu(void);									 // BRings user to the maintenance screen
 
-//Client Menues
+//Client Menus and Functions
 void clientMenu(client& theClient, vector<client>& clients); //Brings user to the screen for clients
 void printClientMenu(client& theClient, bool cheq, bool sav);// Prints the options available to the client
 void deposit(client& theClient);
 void withdraw(client& theClient);
+void withdrawChequing(client& theClient);
+void withdrawSavings(client& theClient);
 void transfer(client& theClient);
+void transferChequing(client& theClient);
+void transferSavings(client& theClient);
 void chequing(client& theClient, bool cheq, bool sav);
 void savings(client& theClient, bool sav, bool cheq);
 
@@ -67,6 +71,7 @@ bool compareAccountNums(client a, client b);
 bool existsInDatabase(vector<client>& clients, int targetAccID);
 void sortByAccountNumber(vector<client>& clients);
 vector<client> sortByLastName(vector<client> clients);
+bool penalty(client& theClient, double amount);
 
 int main()
 {
@@ -133,7 +138,6 @@ int main()
 void clientMenu(client& theClient, vector<client>& clients){
 	cout << endl << "Welcome " << theClient.getFirstName() << "!\n";
 	bool cheq, sav, logout=false;
-	string input;
 	while (!logout){
 		if (theClient.getChequing() == 0){ cheq = false; }
 		else { cheq = true; }
@@ -259,37 +263,18 @@ void savings(client& theClient, bool sav, bool cheq){
 }
 void transfer(client& theClient){
 	bool done = false;
-	double ammount;
 	while (!done){
-		cout <<endl<< "***********---Which account would you like to trasnfer from?---***********\n";
-		cout << "***********---1: Chequings Account---***********\n";
+		cout <<endl<< "***********---Which account would you like to transfer from?---***********\n";
+		cout << "***********---1: Chequing Account---***********\n";
 		cout << "***********---2: Savings Account---***********\n";
 		cout << "***********---3: Cancel---***********\n";
 		switch (getNumber()){
 		case 1:
-			cout <<endl<< "How much would you like to withdraw?\n";
-			ammount = getDouble();
-			if (ammount > theClient.getChequing()){
-				cout <<endl << "Error: Insufficient funds. You have $"<< theClient.getChequing()<< " in your Chequings account\n";
-				break;
-			}
-			theClient.setChequing(theClient.getChequing() - ammount);
-			theClient.setSavings(theClient.getSavings() + ammount);
-			done = true;
-			cout << endl <<"Successfully transfered $" << ammount << " from Chequings account to Savings Account\n";
-			break;
+                        transferChequing(theClient);
+			return;
 		case 2:
-			cout << endl<<"How much would you like to withdraw?\n";
-			ammount = getDouble();
-			if (ammount > theClient.getSavings()){
-				cout <<endl<< "Error: Insufficient funds. You have $" << theClient.getSavings() << " in your Savings account\n";
-				break;
-			}
-			theClient.setChequing(theClient.getChequing() + ammount);
-			theClient.setSavings(theClient.getSavings() - ammount);
-			done = true;
-			cout << endl <<"Successfully transfered $" << ammount << " from Savings account to Chequings Account\n";
-			break;
+                        transferSavings(theClient);
+			return;
 		case 3:
 			return;
 		default:
@@ -306,7 +291,7 @@ void deposit(client& theClient){
 	while (!done){
 		done = true;
 		cout <<endl << "***********---Which account would you like to deposit in?---***********\n";
-		cout << "***********---1: Chequings Account---***********\n";
+		cout << "***********---1: Chequing Account---***********\n";
 		cout << "***********---2: Savings Account---***********\n";
 		cout << "***********---3: Cancel---***********\n";
 		cin >> y;
@@ -315,7 +300,7 @@ void deposit(client& theClient){
 			cout << endl<< "How much would you like to deposit?\n";
 			x = getDouble();
 			theClient.setChequing(theClient.getChequing() + x);
-			cout <<endl<< "Deposited $" << x << " into Chequings Account\n";
+			cout <<endl<< "Deposited $" << x << " into Chequing Account\n";
 			break;
 		case 2:
 			cout <<endl<< "How much would you like to deposit?\n";
@@ -336,21 +321,206 @@ void deposit(client& theClient){
 void withdraw(client& theClient){
 	bool done = false;
 	while (!done){
-
-		cout <<endl << "How much would you like to withdraw?\n";
-		double x = getDouble();
-		if (x == 0){
-			return;
+            cout <<endl<< "***********---Which account would you like to withdraw from?---***********\n";
+            cout << "***********---1: Chequing Account---***********\n";
+            cout << "***********---2: Savings Account---***********\n";
+            cout << "***********---3: Cancel---***********\n";
+            switch (getNumber()){
+                //Withdraw from chequing account.
+                case 1:{
+                    withdrawChequing(theClient);
+                    return;
+                }
+                // Withdraw from savings account.
+                case 2:{
+                    withdrawSavings(theClient);
+                    return;
+                }
+                // Cancel.
+                case 3:{
+                    return;
+                }
+                default:{
+			cout << endl << "Error: Invalid input\n";
 		}
-		else if (x > theClient.getChequing()){
-			cout << endl <<"Error: Insufficient funds. You have $"<<theClient.getChequing() <<" in your chequings account.\n";
-		}else{
-			theClient.setChequing(theClient.getChequing() - x);
-			cout <<endl << "Successfully withdrew $" << x << " from chequing account\n";
-			done = true;
-		}
-	}
+		
+            }
+            
+        }
 }
+
+void transferChequing(client& theClient) {
+    start:
+    cout << endl << "How much would you like to transfer?\n";
+    cout << "Enter 0 to cancel.\n";
+    double x = getDouble();
+    if (x == 0) {
+        return;
+    } 
+    else if (x > theClient.getChequing()) {
+        cout << endl << "Error: Insufficient funds. You have $" << theClient.getChequing() << " in your chequing account.\n";
+        goto start;
+    } 
+    else {
+        // Check if this puts the user under $1000 in the chequing account and apply a penalty if this is true.
+        if (penalty(theClient, x)) { // There is a penalty.
+            warning:
+            // Warn the user if they want to proceed with the withdrawal.
+            cout << "Because this transaction will bring your chequing account's balance below $1000.00, a\n";
+            cout << "$2.00 fee will applied. Do you wish to continue?\n";
+            cout << "1: Yes\n";
+            cout << "2: No\n";
+            switch (getNumber()) {
+                case 1:
+                { // Go through with the transaction.
+                    // Check if the $2.00 penalty will put the balance below $0.
+                    if (theClient.getChequing() - x - 2.00 < 0) {
+                        cout << endl << "Error: Insufficient funds. You have $" << theClient.getChequing() << " in your chequing account.\n";
+                        goto start;
+                    } 
+                    else {
+                        // Perform the transaction.
+                        theClient.setChequing(theClient.getChequing() - x - 2.00);
+                        theClient.setSavings(theClient.getSavings() + x);
+                        cout << "Successfully transferred $" << x << " from your chequing account to your savings account.\n";
+                        cout << "Your chequing balance is $" << theClient.getChequing() << endl;
+                        cout << "Your savings balance is $" << theClient.getSavings() << endl;
+                        return;
+                    }
+                    break;
+                }
+                case 2:
+                { // Cancel the transaction and exit the withdraw menu.
+                    cout << "Transfer canceled. You have not been charged.\n";
+                    return;
+                }
+                default:
+                {
+                    cout << endl << "Error: Invalid input\n";
+                    goto warning;
+                }
+            }
+        } 
+        else { // No penalty.
+            theClient.setChequing(theClient.getChequing() - x);
+            theClient.setSavings(theClient.getSavings() + x);
+            cout << endl << "Successfully transferred $" << x << " from chequing account\n";
+            cout << "Your current chequing balance is $" << theClient.getChequing() << endl;
+            cout << "Your current savings balance is $" << theClient.getSavings() << endl;
+        }
+        
+    }
+    
+    /**
+    cout << endl << "How much would you like to withdraw?\n";
+    ammount = getDouble();
+    if (ammount > theClient.getChequing()) {
+        cout << endl << "Error: Insufficient funds. You have $" << theClient.getChequing() << " in your Chequing account\n";
+        break;
+    }
+    else if //Check if there is a $2.00 penalty.
+    theClient.setChequing(theClient.getChequing() - ammount);
+    theClient.setSavings(theClient.getSavings() + ammount);
+    done = true;
+    cout << endl << "Successfully transfered $" << ammount << " from Chequing account to Savings Account\n";
+     */
+}
+
+void transferSavings(client& theClient) {
+    cout << endl << "How much would you like to withdraw?\n";
+    double ammount;
+    ammount = getDouble();
+    if (ammount > theClient.getSavings()) {
+        cout << endl << "Error: Insufficient funds. You have $" << theClient.getSavings() << " in your Savings account\n";
+        return;
+    }
+    theClient.setChequing(theClient.getChequing() + ammount);
+    theClient.setSavings(theClient.getSavings() - ammount);
+    cout << "Successfully transfered $" << ammount << " from Savings account to Chequing Account\n";
+    cout << "Your current chequing balance is $" << theClient.getChequing() << endl;
+    cout << "Your current savings balance is $" << theClient.getSavings() << endl;
+}
+
+void withdrawChequing(client& theClient) {
+    start:
+    cout << endl << "How much would you like to withdraw?\n";
+    cout << "Enter 0 to cancel.\n";
+    double x = getDouble();
+    if (x == 0) {
+        return;
+    } 
+    else if (x > theClient.getChequing()) {
+        cout << endl << "Error: Insufficient funds. You have $" << theClient.getChequing() << " in your chequing account.\n";
+        goto start;
+    } 
+    else {
+        // Check if this puts the user under $1000 in the chequing account and apply a penalty if this is true.
+        if (penalty(theClient, x)) { // There is a penalty.
+            warning:
+            // Warn the user if they want to proceed with the withdrawal.
+            cout << "Because this transaction will bring your chequing account's balance below $1000.00, a\n";
+            cout << "$2.00 fee will applied. Do you wish to continue?\n";
+            cout << "1: Yes\n";
+            cout << "2: No\n";
+            switch (getNumber()) {
+                case 1:
+                { // Go through with the transaction.
+                    // Check if the $2.00 penalty will put the balance below $0.
+                    if (theClient.getChequing() - x - 2.00 < 0) {
+                        cout << endl << "Error: Insufficient funds. You have $" << theClient.getChequing() << " in your chequing account.\n";
+                        goto start;
+                    } 
+                    else {
+                        // Perform the transaction.
+                        theClient.setChequing(theClient.getChequing() - x - 2.00);
+                        cout << "Successfully withdrew $" << x << " from chequing account.\n";
+                        cout << "Your current chequing balance is $" << theClient.getChequing();
+                        return;
+                    }
+                    break;
+                }
+                case 2:
+                { // Cancel the transaction and exit the withdraw menu.
+                    cout << "Withdrawal canceled. You have not been charged.\n";
+                    return;
+                }
+                default:
+                {
+                    cout << endl << "Error: Invalid input\n";
+                    goto warning;
+                }
+
+            }
+        } 
+        else { // No penalty.
+            theClient.setChequing(theClient.getChequing() - x);
+            cout << endl << "Successfully withdrew $" << x << " from chequing account\n";
+            cout << "Your current chequing balance is $" << theClient.getChequing();
+        }
+        
+    }
+}
+
+void withdrawSavings(client& theClient){
+    start:
+    cout << endl << "How much would you like to withdraw?\n";
+    cout << "Enter 0 to cancel.\n";
+    double x = getDouble();
+    if (x == 0) {
+        return;
+    } 
+    else if (x > theClient.getSavings()) {
+        cout << endl << "Error: Insufficient funds. You have $" << theClient.getSavings() << " in your savings account.\n";
+        goto start;
+    } 
+    else{ // Perform the transaction.
+        theClient.setSavings(theClient.getSavings() - x);
+        cout << "Successfully withdrew $" << x << " from savings account\n";
+        cout << "Your current savings balance is $" << theClient.getSavings();
+    }
+}
+
+
 void saveClients(vector<client>& clients){
     // Sort the clients vector by account number.
     sortByAccountNumber(clients);
@@ -389,24 +559,25 @@ void managerMenu(vector<client>& clients){
         start:
 	bool logout = false;
 	while (!logout){
+            
 		printManMenu();
+                
 		switch (getNumber()){
+                    
                 // Create an account.   
 		case 1:
                 {
-                    bool valid1 = false;
-                    // Get the account number.
+                    // Automatically generate a new account number.
                     int newAccNumber;
-                    while (!valid1){
-                        cout << "Please enter an account number. \n";
-                        cout << "To cancel, enter 0.\n";
-                        newAccNumber = getNumber();
-                        if (newAccNumber == 0) goto start;   //Escape back to the manager menu.
-                        else if (newAccNumber > 1) valid1 = true;
-                        else cout << "Negative numbers and 1 are not valid account numbers.\n";
+                    if (clients.empty()){
+                        newAccNumber = 100;
+                    }
+                    else { // Generate a new account number by taking the last number on the on the clients vector and adding 1 to it.
+                        newAccNumber = clients[clients.size()-1].getId() + 1;
                     }
                     
                     // Get the first name of the new client.
+                    bool valid1 = false;
                     valid1 = false;
                     string firstName;
                     while (!valid1){
@@ -451,11 +622,10 @@ void managerMenu(vector<client>& clients){
                         cout << "Could not open account: account number already exists.\n";
                     }
                     else {
-                        cout << "Account successfully created.\n";
+                        cout << "Account #" << newAccNumber << " for user " << firstName << " " << lastName << " was successfully created.\n";
                     }
                     break;
                 }
-                
                     
                 // Delete an account.   
 		case 2:
@@ -467,18 +637,48 @@ void managerMenu(vector<client>& clients){
                         cout << "To cancel, enter 0.\n";
                         int accNumber = getNumber();
                         if (accNumber == 0) goto start;   //Escape back to the manager menu.
-                        bool success = deleteAccount(clients, accNumber);
-                        if (!success){
-                            cout << "Account " << accNumber << " could not be found.\n";
+                        // Do not allow the account to be deleted if there is still money in it
+                        int x = getAccountIndex(clients, accNumber, 0, clients.size() - 1);
+                        if (x == -1){
+                            cout << "Account #" << accNumber << " could not be found.\n";
                         }
+                        else if (clients[x].getSavings() != 0 || clients[x].getChequing() != 0){
+                            cout << "Account #" << accNumber << " could not be deleted since there exists a balance on their savings and/or chequing account.\n";
+                        }
+                        // Otherwise, attempt to delete the account.
                         else{
-                            cout << "Account " << accNumber << " successfully removed.\n";
-                            valid2 = true;
+                            // Ask for confirmation.
+                            cout << "Are you sure you want to delete account #" << accNumber << " owned by " << clients[x].getLastName() << ", " << clients[x].getFirstName() << "?\n";
+                            cout << "1: Yes\n";
+                            cout << "2: No\n";
+                            
+                            switch (getNumber()){
+                                case 1:{ // Attempt to delete.
+                                    bool success = deleteAccount(clients, accNumber);
+                                    if (!success){
+                                        cout << "Account #" << accNumber << " could not be deleted.\n";
+                                    }
+                                    else{
+                                        cout << "Account #" << accNumber << " successfully removed.\n";
+                                        valid2 = true;
+                                        break;
+                                    }
+                                }
+                                case 2:{ // Go back to the main menu.
+                                    cout << "Deletion canceled.\n";
+                                    goto start;
+                                }
+                                default:
+                                    {
+                                        cout << "Error: Invalid input\n";
+                                    }
+                                    
+                            }
+                            
                         }
                     }
                     break;
                 }
-                
                     
                 // Display an account.    
 		case 3:
@@ -713,4 +913,14 @@ double getDouble(){
 		cin >> ammount;
 	}
 	return ammount;
+}
+
+bool penalty(client& theClient, double amount){
+    // Check if the transaction will bring the client's chequing account down below $1000.
+    if (theClient.getChequing() - amount < 1000.00){
+        return true;
+    }
+    else{
+        return false;
+    }
 }
