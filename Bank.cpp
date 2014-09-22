@@ -6,6 +6,7 @@
 #include <sstream>
 #include <limits>
 #include <algorithm>
+#include <stdio.h>
 #define ON true
 #define OFF false
 using namespace std;
@@ -53,6 +54,7 @@ void toggleExecutionTraces(void);   // Sets execution traces from on --> off or 
 void setExecutionTraces(bool x);   // Turns execution traces on or off depending on x. (true = on, false = off)
 void writeToET(string str);  // Writes str to the file execution_traces.txt 
 void printExecutionTraces(void);
+void clearExecutionTracesLog(void);
 
 //Client Menus and Functions
 void clientMenu(client& theClient, vector<client>& clients); //Brings user to the screen for clients
@@ -925,13 +927,14 @@ int getAccountIndex(vector<client>& clients, int targetAccNum, int low, int high
 
 void maintenanceMenu(void){
 	cout <<endl << "Welcome System Maintenance Person!\n";
-        
+        start:
         bool logout = false;
         while (!logout){
             cout << endl << "***********---What would you like to do?---*********** \n";
             cout << "***********---1: Toggle execution tracing---***********\n";
             cout << "***********---2: Print execution traces---***********\n";
-            cout << "***********---3: Logout---***********\n";
+            cout << "***********---3: Clear execution traces log---***********\n";
+            cout << "***********---4: Logout---***********\n";
             switch (getNumber()){
                 
                 // Toggle execution tracing.
@@ -946,8 +949,30 @@ void maintenanceMenu(void){
                     break;
                 }
                 
-                // Logout.
                 case 3:{
+                    // Ask for confirmation.
+                    cout << "Are you sure you want to clear the execution traces log?\n";
+                    cout << "1: Yes\n";
+                    cout << "2: No\n";
+                    switch (getNumber()){
+                        case 1:{
+                            clearExecutionTracesLog();
+                            goto start;
+                        }
+                        
+                        case 2:{
+                            goto start;
+                        }
+                        default:{
+                            cout << "Invalid input\n";
+                        }
+                    }
+                    clearExecutionTracesLog();
+                    break;
+                }
+                
+                // Logout.
+                case 4:{
                     return; // Exit the maintenance menu.
                 }
                 
@@ -999,7 +1024,47 @@ void toggleExecutionTraces(){
         switch (getNumber()){
             
             case 1:{    //Yes, switch OFF
+                string line;
                 executionTraces = OFF;
+                // Change the first line of the file.
+                ifstream etFile;
+                etFile.open("execution_traces.txt");
+                if (etFile.is_open()){
+                    // We need to make a temporary file to save our exec traces.
+                    ofstream tempFile;
+                    tempFile.open("temp.txt");
+                    if (tempFile.is_open()){
+                        // Start copying the contents of execution_traces.txt into temp.txt
+                        // Skip the first line.
+                        getline(etFile, line);
+                        while (getline(etFile, line)){
+                            tempFile << line << endl;
+                        }
+                        tempFile.close();
+                        etFile.close();
+                        // Overwrite execution_traces.txt.
+                        ofstream etFileWrite("execution_traces.txt");
+                        etFileWrite << "0\n"; // The file now only contains "0".
+                        // Add the rest of the file from the temp.
+                        ifstream tempFileRead("temp.txt");
+                        while (getline(tempFileRead, line)){
+                            etFileWrite << line << endl;
+                        }
+                        etFileWrite.close();
+                        tempFileRead.close();
+                        // Remove temp.txt since we no longer need it.
+                        if(remove("temp.txt") != 0) cout << "Error deleting file temp.txt\n";
+                    }
+                    else{
+                        cout << "Could not create temp.txt\n";
+                        return;
+                    }
+                    
+                }
+                else{
+                    cout << "Could not open file execution_traces.txt\n";
+                    return;
+                }
                 cout << "Execution tracing is OFF.\n";
                 break;
             }
@@ -1020,7 +1085,47 @@ void toggleExecutionTraces(){
         switch (getNumber()){
             
             case 1:{    //Yes, switch ON
+                string line;
                 executionTraces = ON;
+                // Change the first line of the file.
+                ifstream etFile;
+                etFile.open("execution_traces.txt");
+                if (etFile.is_open()){
+                    // We need to make a temporary file to save our exec traces.
+                    ofstream tempFile;
+                    tempFile.open("temp.txt");
+                    if (tempFile.is_open()){
+                        // Start copying the contents of execution_traces.txt into temp.txt
+                        // Skip the first line.
+                        getline(etFile, line);
+                        while (getline(etFile, line)){
+                            tempFile << line << endl;
+                        }
+                        tempFile.close();
+                        etFile.close();
+                        // Overwrite execution_traces.txt.
+                        ofstream etFileWrite("execution_traces.txt");
+                        etFileWrite << "1\n"; // The file now only contains "1".
+                        // Add the rest of the file from the temp.
+                        ifstream tempFileRead("temp.txt");
+                        while (getline(tempFileRead, line)){
+                            etFileWrite << line << endl;
+                        }
+                        etFileWrite.close();
+                        tempFileRead.close();
+                        // Remove temp.txt since we no longer need it.
+                        if(remove("temp.txt") != 0) cout << "Error deleting file temp.txt\n";
+                    }
+                    else{
+                        cout << "Could not create temp.txt\n";
+                        return;
+                    }
+                    
+                }
+                else{
+                    cout << "Could not open file execution_traces.txt\n";
+                    return;
+                }
                 cout << "Execution tracing is ON.\n";
                 break;
             }
@@ -1037,16 +1142,61 @@ void toggleExecutionTraces(){
 }
 
 void writeToET(string str){
-    ofstream etFile;
-    // Open the file in append mode.
-    etFile.open("execution_traces.txt", ios::app);
-    // Write.
-    etFile << str;
-    // Close.
-    etFile.close();
+    // Only write if execution tracing is on.
+    if (executionTraces == ON){
+        ofstream etFile;
+        // Open the file in append mode.
+        etFile.open("execution_traces.txt", ios::app);
+        if (etFile.is_open()){
+            // Write.
+            etFile << str << endl;
+            // Close.
+            etFile.close();
+        }
+        else{
+            cout <<"Could not open file execution_traces.txt\n";
+        }
+    }
+    else {
+        return;
+    }
 }
 
 void printExecutionTraces(){
     // Open execution_traces.txt and print the file (excluding the first line).
-    
+    string line;
+    ifstream etFile;
+    etFile.open("execution_traces.txt");
+    if (etFile.is_open()){
+        // Skip the first line.
+        getline(etFile, line);
+        while (getline(etFile, line))
+        {
+            cout << line << endl;
+        }
+        // Close the file.
+        etFile.close();
+    }
+    else{
+        cout << "Could not open file execution_traces.txt\n";
+    }
+}
+
+void clearExecutionTracesLog(){
+    // Clear everything in execution_traces.txt EXCEPT for the first line which governs the state of exec tracing.
+    // Do this by overwriting the file with the current state of executionTraces.
+    ofstream etFile;
+    etFile.open("execution_traces.txt");
+    if (etFile.is_open()){
+        if (executionTraces == ON){
+            etFile << "1";
+        }
+        else{
+            etFile << "0";
+        }
+        etFile.close();
+    }
+    else{
+        cout << "Could not open file execution_traces.txt\n";
+    }
 }
