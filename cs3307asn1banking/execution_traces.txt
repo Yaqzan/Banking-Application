@@ -1,0 +1,146 @@
+1End of Month
+
+Recieving credit payment from clients.
+
+Client #11111 has payed the full ammount of his/her debt.
+
+Notifying Bank of failed payment. Storing Failed payment to file.
+
+Client #12345 failed to pay the minimum payment and their account has been frozen.
+
+Client #98765 has payed the full ammount of his/her debt.
+
+Client #98766 has payed the full ammount of his/her debt.
+
+Purchases are being saved.
+
+A day goes by
+
+User is entering a number
+
+User correctly entered the number12345
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 12345 int low = 0int high = 3
+
+int getAccountIndex() found 1
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 12345 int low = 0int high = 3
+
+int getAccountIndex() found 1
+
+Logged in as client #12345
+
+User is entering a number
+
+User correctly entered the number8
+
+12345 selected 8: View Purchaces
+
+Veiwing purchases.
+
+User is entering a number
+
+User correctly entered the number10
+
+12345 selected 10: Logout
+
+User is entering a number
+
+User correctly entered the number11111
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 11111 int low = 0int high = 3
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 11111 int low = 0int high = 0
+
+int getAccountIndex() found 0
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 11111 int low = 0int high = 3
+
+int getAccountIndex(vector<client>& clients, int targetAccNum = 11111 int low = 0int high = 0
+
+int getAccountIndex() found 0
+
+Logged in as client #11111
+
+User is entering a number
+
+User correctly entered the number7
+
+11111 selected 7: Purchase
+
+User is entering a number
+
+User correctly entered the number1
+
+11111 Confirmed Purchase
+
+User is entering a number
+
+User correctly entered the number1234
+
+Entered PIN correctly
+
+11111 Finished Purchase of $28.44
+
+Purchases are being saved to vendor.
+
+Purchases are being saved.
+
+User is entering a number
+
+User correctly entered the number7
+
+11111 selected 7: Purchase
+
+User is entering a number
+
+User correctly entered the number1
+
+11111 Confirmed Purchase
+
+User is entering a number
+
+User correctly entered the number1234
+
+Entered PIN correctly
+
+11111 Finished Purchase of $9.29
+
+Purchases are being saved to vendor.
+
+Purchases are being saved.
+
+User is entering a number
+
+User correctly entered the number7
+
+11111 selected 7: Purchase
+
+User is entering a number
+
+User correctly entered the number1
+
+11111 Confirmed Purchase
+
+User is entering a number
+
+User correctly entered the number1234
+
+Entered PIN correctly
+
+11111 Finished Purchase of $52.65
+
+Purchases are being saved to vendor.
+
+Purchases are being saved.
+
+User is entering a number
+
+User correctly entered the number8
+
+11111 selected 8: View Purchaces
+
+Veiwing purchases.
+
+User is entering a number
+
