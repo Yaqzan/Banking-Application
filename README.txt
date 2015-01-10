@@ -28,7 +28,7 @@ Make sure the following text files are in the directory:
 Format for the following text files:
 /////////////////////////////////////////////////////////////////////////////
 clients.txt
-	[ID] [chequing account balance] [sav act balance] [1st name] [2nd name] [PIN] ["Frozen" or "ok"] [credit limit] ["part" or "full"] [debt]
+	[ID] [chequing account balance] [sav act balance] [1st name] [2nd name] [PIN] ["Frozen" or "ok"] [credit limit] 		["part" or "full"] [debt]
 	...
 /////////////////////////////////////////////////////////////////////////////
 client_purchases.txt
